@@ -109,7 +109,7 @@ executable cloud-haskell-chat-server
   import:              cloud-haskell-chat-options
   hs-source-dirs:      server
   main-is:             Main.hs
-  other-modules:       Paths_cloud-haskell-chat
+  other-modules:       Paths_cloud_haskell_chat
   build-depends:       cloud-haskell-chat
                      , optparse-applicative ^>= 0.16.1.0
                      , fast-logger
@@ -124,7 +124,7 @@ executable cloud-haskell-chat-client
   import:              cloud-haskell-chat-options
   hs-source-dirs:      client
   main-is:             Main.hs
-  other-modules:       Paths_cloud-haskell-chat
+  other-modules:       Paths_cloud_haskell_chat
   build-depends:       cloud-haskell-chat
                      , optparse-applicative ^>= 0.16.1.0
                      , fast-logger
