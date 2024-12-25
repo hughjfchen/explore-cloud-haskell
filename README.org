@@ -1,0 +1,10 @@
+#+title: Readme
+
+* What
+
+This is the mono repository to explore the ~Cloud Haskell~.
+
+It contains following modules:
+- Cloud-Haskell-Chat
+
+Please refer to the doc under each module for more information.

@@ -1,0 +1,16 @@
+cradle:
+  cabal:
+    - path: "./src"
+      component: "lib:cloud-haskell-chat"
+
+    - path: "./server"
+      component: "cloud-haskell-chat:exe:cloud-haskell-chat-server"
+
+    - path: "./client"
+      component: "cloud-haskell-chat:exe:cloud-haskell-chat-client"
+
+    - path: "./test"
+      component: "cloud-haskell-chat:test:cloud-haskell-chat-test"
+
+    - path: "./benchmark"
+      component: "cloud-haskell-chat:bench:cloud-haskell-chat-benchmark"
