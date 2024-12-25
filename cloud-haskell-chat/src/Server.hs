@@ -1,52 +1,62 @@
-{-# LANGUAGE RecordWildCards #-}
+module Server
+  ( serveChatRoom,
+    broadcastMessage,
+    messageHandler,
+    joinChatHandler,
+    disconnectHandler,
+    launchChatServer,
+  )
+where
 
-module Server where
-
-import Network.Transport.TCP (createTransport, defaultTCPParameters)
-import Control.Distributed.Process.ManagedProcess ( serve
-                                                  , defaultProcess
-                                                  , handleRpcChan
-                                                  , handleCast
-                                                  , handleInfo
-                                                  , InitResult(..)
-                                                  , UnhandledMessagePolicy(..)
-                                                  , ChannelHandler
-                                                  , ActionHandler
-                                                  , CastHandler
-                                                  , ProcessDefinition(..) )
-import Control.Distributed.Process ( spawnLocal
-                                   , register
-                                   , monitorPort
-                                   , sendPortId
-                                   , processNodeId
-                                   , Process
-                                   , DiedReason(..)
-                                   , ProcessId(..)
-                                   , NodeId(..)
-                                   , PortMonitorNotification(..) )
-import Control.Distributed.Process.ManagedProcess.Server (replyChan, continue)
-import Control.Distributed.Process.Extras.Time (Delay(..))
-import Control.Distributed.Process.Node ( initRemoteTable
-                                        , runProcess
-                                        , newLocalNode )
 import Control.Concurrent (threadDelay)
-import Control.Monad.IO.Class (liftIO)
-import Control.Monad (forever, forM_, void)
-import Logger (runChatLogger, logStr)
-import qualified Data.Map as M (insert, empty, member, delete, filter, elemAt)
+import Control.Distributed.Process
+  ( DiedReason (..),
+    NodeId (..),
+    PortMonitorNotification (..),
+    Process,
+    ProcessId (..),
+    monitorPort,
+    processNodeId,
+    register,
+    sendPortId,
+    spawnLocal,
+  )
+import Control.Distributed.Process.Extras.Time (Delay (..))
+import Control.Distributed.Process.ManagedProcess
+  ( ActionHandler,
+    CastHandler,
+    ChannelHandler,
+    InitResult (..),
+    ProcessDefinition (..),
+    UnhandledMessagePolicy (..),
+    defaultProcess,
+    handleCast,
+    handleInfo,
+    handleRpcChan,
+    serve,
+  )
+import Control.Distributed.Process.ManagedProcess.Server (continue, replyChan)
+import Control.Distributed.Process.Node
+  ( initRemoteTable,
+    newLocalNode,
+    runProcess,
+  )
+import qualified Data.Map as M (delete, elemAt, empty, filter, insert, member)
+import Logger (logStr, runChatLogger)
+import Network.Transport.TCP (createTransport, defaultTCPAddr, defaultTCPParameters)
 import Types
 
 serveChatRoom :: Host -> Int -> ChatName -> IO ()
 serveChatRoom host port name = do
-  mt <- createTransport host (show port) defaultTCPParameters
+  mt <- createTransport (defaultTCPAddr (toString host) (show port)) defaultTCPParameters
   case mt of
     Right transport -> do
       node <- newLocalNode transport initRemoteTable
       runChatLogger node
       runProcess node $ do
         pId <- launchChatServer
-        logStr $ "Server launched at: " ++ show (nodeAddress . processNodeId $ pId)
-        register name pId
+        logStr $ "Server launched at: " <> show (nodeAddress . processNodeId $ pId)
+        register (toString name) pId
         liftIO $ forever $ threadDelay 500000
     Left err -> print err
 
@@ -66,13 +76,13 @@ joinChatHandler :: ChannelHandler ClientPortMap JoinChatMessage ChatMessage
 joinChatHandler sendPort = handler
   where
     handler :: ActionHandler ClientPortMap JoinChatMessage
-    handler clients JoinChatMessage{..} =
+    handler clients JoinChatMessage {..} =
       if clientName `M.member` clients
         then replyChan sendPort (ChatMessage Server "Nickname already in use ... ") >> continue clients
         else do
           void $ monitorPort sendPort
           let clients' = M.insert clientName sendPort clients
-              msg = clientName ++ " has joined the chat ..."
+              msg = clientName <> " has joined the chat ..."
           logStr msg
           broadcastMessage clients $ ChatMessage Server msg
           continue clients'
@@ -81,20 +91,22 @@ disconnectHandler :: ActionHandler ClientPortMap PortMonitorNotification
 disconnectHandler clients (PortMonitorNotification _ spId reason) = do
   let search = M.filter (\v -> sendPortId v == spId) clients
   case (null search, reason) of
-    (False, DiedDisconnect)-> do
+    (False, DiedDisconnect) -> do
       let (clientName, _) = M.elemAt 0 search
           clients' = M.delete clientName clients
-      broadcastMessage clients' (ChatMessage Server $ clientName ++ " has left the chat ... ")
+      broadcastMessage clients' (ChatMessage Server $ clientName <> " has left the chat ... ")
       continue clients'
     _ -> continue clients
 
 launchChatServer :: Process ProcessId
 launchChatServer =
-  let server = defaultProcess {
-          apiHandlers =  [ handleRpcChan joinChatHandler
-                         , handleCast messageHandler
-                         ]
-        , infoHandlers = [ handleInfo disconnectHandler ]
-        , unhandledMessagePolicy = Log
-        }
-  in spawnLocal $ serve () (const (return $ InitOk M.empty Infinity)) server
+  let server =
+        defaultProcess
+          { apiHandlers =
+              [ handleRpcChan joinChatHandler,
+                handleCast messageHandler
+              ],
+            infoHandlers = [handleInfo disconnectHandler],
+            unhandledMessagePolicy = Log
+          }
+   in spawnLocal $ serve () (const (return $ InitOk M.empty Infinity)) server

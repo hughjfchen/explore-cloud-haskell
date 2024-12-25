@@ -1,31 +1,41 @@
-{-# LANGUAGE RecordWildCards    #-}
+{-# LANGUAGE RecordWildCards #-}
 
-module Logger where
+module Logger
+  ( chatMessageToStr,
+    chatLogger,
+    runChatLogger,
+    logChatMessage,
+    logStr,
+  )
+where
 
-import Control.Distributed.Process ( receiveWait
-                                   , match
-                                   , register
-                                   , nsend
-                                   , Process )
-import Control.Monad.IO.Class (liftIO)
-import Control.Distributed.Process.Node (runProcess, forkProcess, LocalNode)
+import Control.Distributed.Process
+  ( Process,
+    match,
+    nsend,
+    receiveWait,
+    register,
+  )
+import Control.Distributed.Process.Node (LocalNode, forkProcess, runProcess)
+-- import Control.Monad.IO.Class (liftIO)
 import Types
 
-chatMessageToStr :: ChatMessage -> String
-chatMessageToStr ChatMessage{..} =
+chatMessageToStr :: ChatMessage -> Text
+chatMessageToStr ChatMessage {..} =
   case from of
-    Server ->  message
-    Client sender-> sender ++ ": " ++ message
+    Server -> message
+    Client sender -> sender <> ": " <> message
 
 chatLogger :: Process ()
-chatLogger = receiveWait
-  [ match $ \chatMessage -> do
-      liftIO . putStrLn $ chatMessageToStr chatMessage
-      chatLogger
-  , match $ \str -> do
-      liftIO . putStrLn $ str
-      chatLogger
-  ]
+chatLogger =
+  receiveWait
+    [ match $ \chatMessage -> do
+        liftIO . putTextLn $ chatMessageToStr chatMessage
+        chatLogger,
+      match $ \str -> do
+        liftIO . putStrLn $ str
+        chatLogger
+    ]
 
 runChatLogger :: LocalNode -> IO ()
 runChatLogger node = do
@@ -35,5 +45,5 @@ runChatLogger node = do
 logChatMessage :: ChatMessage -> Process ()
 logChatMessage = nsend "chatLogger"
 
-logStr :: String -> Process ()
+logStr :: Text -> Process ()
 logStr = nsend "chatLogger"

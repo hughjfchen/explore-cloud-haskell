@@ -1,42 +1,46 @@
-module Client where
+module Client
+  ( searchChatServer,
+    launchChatClient,
+  )
+where
 
-import Control.Distributed.Process.ManagedProcess.Client (callChan, cast)
-import Control.Distributed.Process ( expectTimeout
-                                   , whereisRemoteAsync
-                                   , spawnLocal
-                                   , receiveChan
-                                   , link
-                                   , NodeId(..)
-                                   , Process
-                                   , ProcessId
-                                   , ReceivePort
-                                   , WhereIsReply(..) )
-import Control.Distributed.Process.Node ( initRemoteTable
-                                        , runProcess
-                                        , newLocalNode )
-import Network.Transport.TCP (createTransport, defaultTCPParameters)
-import Network.Transport     (EndPointAddress(..))
 import Control.Concurrent (threadDelay)
-import Control.Monad.IO.Class (liftIO)
-import Control.Monad (void, forever)
-import qualified Data.ByteString.Char8 as BS (pack)
+import Control.Distributed.Process
+  ( NodeId (..),
+    Process,
+    ProcessId,
+    ReceivePort,
+    WhereIsReply (..),
+    expectTimeout,
+    link,
+    receiveChan,
+    spawnLocal,
+    whereisRemoteAsync,
+  )
+import Control.Distributed.Process.ManagedProcess.Client (callChan, cast)
+import Control.Distributed.Process.Node
+  ( initRemoteTable,
+    newLocalNode,
+    runProcess,
+  )
+import Logger (logChatMessage, logStr, runChatLogger)
+import Network.Transport (EndPointAddress (..))
+import Network.Transport.TCP (createTransport, defaultTCPAddr, defaultTCPParameters)
 import Types
-import Logger (runChatLogger, logChatMessage, logStr)
-
 
 searchChatServer :: ChatName -> ServerAddress -> Process ProcessId
 searchChatServer name serverAddr = do
-  let addr = EndPointAddress (BS.pack serverAddr)
+  let addr = EndPointAddress $ encodeUtf8 serverAddr
       srvId = NodeId addr
-  whereisRemoteAsync srvId name
+  whereisRemoteAsync srvId $ toString name
   reply <- expectTimeout 1000
   case reply of
     Just (WhereIsReply _ (Just sid)) -> return sid
     _ -> searchChatServer name serverAddr
 
 launchChatClient :: ServerAddress -> Host -> Int -> ChatName -> IO ()
-launchChatClient serverAddr clientHost port name  = do
-  mt <- createTransport clientHost (show port) defaultTCPParameters
+launchChatClient serverAddr clientHost port name = do
+  mt <- createTransport (defaultTCPAddr (toString clientHost) (show port)) defaultTCPParameters
   case mt of
     Left err -> print err
     Right transport -> do

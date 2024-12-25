@@ -1,40 +1,44 @@
-{-# LANGUAGE DeriveDataTypeable     #-}
-{-# LANGUAGE DeriveGeneric          #-}
-{-# LANGUAGE DuplicateRecordFields  #-}
+module Types
+  ( ChatName,
+    NickName,
+    Host,
+    ServerAddress,
+    ClientPortMap,
+    Sender (..),
+    ChatMessage (..),
+    JoinChatMessage (..),
+  )
+where
 
-module Types where
-
-import GHC.Generics
-import Data.Binary
-import Data.Typeable.Internal
-import Data.Map (Map)
 import Control.Distributed.Process (SendPort)
+import Data.Binary
 
+type ChatName = Text
 
-type ChatName = String
+type NickName = Text
 
-type NickName = String
+type Host = Text
 
-type Host = String
-
-type ServerAddress = String
+type ServerAddress = Text
 
 type ClientPortMap = Map NickName (SendPort ChatMessage)
 
 data Sender = Server | Client NickName
-  deriving (Generic, Typeable, Eq, Show)
+  deriving stock (Generic, Typeable, Eq, Show)
 
 instance Binary Sender
 
-data ChatMessage = ChatMessage {
-    from :: Sender
-  , message :: String
-  } deriving (Generic, Typeable, Show)
+data ChatMessage = ChatMessage
+  { from :: Sender,
+    message :: Text
+  }
+  deriving stock (Generic, Typeable, Show)
 
 instance Binary ChatMessage
 
-newtype JoinChatMessage = JoinChatMessage {
-    clientName :: NickName
-  } deriving (Generic, Typeable, Show)
+newtype JoinChatMessage = JoinChatMessage
+  { clientName :: NickName
+  }
+  deriving stock (Generic, Typeable, Show)
 
 instance Binary JoinChatMessage
