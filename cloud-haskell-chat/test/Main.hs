@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Spec (main) where
+module Main (main) where
 
 import Test.Hspec
 import Test.Hspec.Hedgehog

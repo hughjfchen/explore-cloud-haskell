@@ -139,7 +139,7 @@ test-suite cloud-haskell-chat-test
   import:              cloud-haskell-chat-options
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
-  main-is:             Spec.hs
+  main-is:             Main.hs
   other-modules:       Paths_cloud_haskell_chat
   build-depends:       cloud-haskell-chat
                      , hspec
