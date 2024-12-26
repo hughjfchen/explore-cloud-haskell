@@ -32,6 +32,9 @@ chatLogger =
     [ match $ \chatMessage -> do
         liftIO . putTextLn $ chatMessageToStr chatMessage
         chatLogger,
+      match $ \txt -> do
+        liftIO . putTextLn $ txt
+        chatLogger,
       match $ \str -> do
         liftIO . putStrLn $ str
         chatLogger
