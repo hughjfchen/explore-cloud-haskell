@@ -34,8 +34,11 @@
         # This adds support for `nix build .#js-unknown-ghcjs:hello:exe:hello`
         crossPlatforms = p: if (system == "x86_64-linux") then [p.musl64] else [];
       };
-    in flake // {
-      # Built by `nix build .`
-      packages.default = flake.packages."cloud-haskell-chat:exe:cloud-haskell-chat-server";
+    in pkgs.lib.recursiveUpdate flake { packages.default = flake.packages."cloud-haskell-chat:exe:cloud-haskell-chat-server"; }
+     // {
+      # packages = flake.packages;
+      # add the pacakges to checks so that they can be built at the once.
+      # checks.server = flake.packages."cloud-haskell-chat:exe:cloud-haskell-chat-server";
+      # checks.client = flake.packages."cloud-haskell-chat:exe:cloud-haskell-chat-client";
     });
 }
