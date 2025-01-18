@@ -48,7 +48,7 @@ import Types
 
 serveChatRoom :: Host -> Int -> ChatName -> IO ()
 serveChatRoom host port name = do
-  mt <- createTransport (defaultTCPAddr (toString host) (show port)) defaultTCPParameters
+  mt <- flip createTransport defaultTCPParameters $ defaultTCPAddr (toString host) (show port)
   case mt of
     Right transport -> do
       node <- newLocalNode transport initRemoteTable

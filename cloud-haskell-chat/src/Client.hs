@@ -40,7 +40,7 @@ searchChatServer name serverAddr = do
 
 launchChatClient :: ServerAddress -> Host -> Int -> ChatName -> IO ()
 launchChatClient serverAddr clientHost port name = do
-  mt <- createTransport (defaultTCPAddr (toString clientHost) (show port)) defaultTCPParameters
+  mt <- flip createTransport defaultTCPParameters $ defaultTCPAddr (toString clientHost) (show port)
   case mt of
     Left err -> print err
     Right transport -> do
