@@ -13,7 +13,7 @@
             explore-cloud-haskellProject =
               final.haskell-nix.project' {
                 src = ./.;
-                compiler-nix-name = "ghc966";
+                compiler-nix-name = "ghc967";
                 # This is used by `nix develop .` to open a shell for use with
                 # `cabal`, `hlint` and `haskell-language-server`
                 shell.tools = {
